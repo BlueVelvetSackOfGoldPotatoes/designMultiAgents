@@ -59,6 +59,7 @@ to setup
   set worldy 121
   resize-world 0 (worldx - 1) 0 (worldy - 1)
   set-patch-size 500 / worldx
+  setup-plots
 
   ;;Reads the prevalence from the boxes in the interace, this should sum to 100.
   set ToM0-prevalence read-from-string ToM0
@@ -71,6 +72,8 @@ to patch-init
   set randnumber random 100
 
   set score 0.0
+
+  set update-weight 0.5
 
   ;;ToM0 patches are red, ToM1 patches are green.
   if randnumber > ToM0-prevalence
@@ -90,16 +93,19 @@ to run-sim
 
   ask patches [set score 0.0]
 
-  ;;There should be code here that makes all patches play the ultimatum game with all of their neighbours
-  ;;Once as initiator and once as responder ig, for simplicity just make the patch we're looking at be the initiator
+  ;;Patches play the ultimatum game
+  ;;Every patch will be the initiator once to each neighbor and will have each neighbor initiate once to them
+  ask patches [
+    ultimatum self (patch-at 0 -1)
+    ultimatum self (patch-at 0 1)
+    ultimatum self (patch-at 1 0)
+    ultimatum self (patch-at -1 0)
 
-end
+    ;;All patches check with their neighbors who has a higher score, and weigh their updates accordingly.
+    compare-scores
+  ]
 
-;;Resetti
-to reset
-  reset-ticks
-
-  ask patches [patch-init]
+  update-plots
 
 end
 
@@ -210,7 +216,7 @@ BUTTON
 568
 ready set go that's right we're firing this bad boy up (run simulation)
 run-sim
-NIL
+T
 1
 T
 OBSERVER
@@ -220,22 +226,24 @@ NIL
 NIL
 1
 
-BUTTON
-134
-69
-198
-102
-Reset
-reset
-NIL
-1
-T
-OBSERVER
+PLOT
+807
+148
+1128
+298
+plot 1
 NIL
 NIL
-NIL
-NIL
-1
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"Average threshold" 1.0 0 -13840069 true "" "plot mean [threshold] of patches"
+"Average offer" 1.0 0 -955883 true "" "plot mean [offer] of patches"
 
 @#$#@#$#@
 ## WHAT IS IT?
