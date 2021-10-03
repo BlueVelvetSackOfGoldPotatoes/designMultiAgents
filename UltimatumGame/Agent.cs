@@ -109,7 +109,7 @@ namespace UltimatumGame
             else
                 return rejectionRewards.Max();
         }
-        public double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
+        private double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
         {
             double[] probabilityDistribution = new double[101];
             
@@ -211,6 +211,16 @@ namespace UltimatumGame
             {
                 return 0;
             }
+        }
+
+        public void AddDealAccepted()
+        {
+
+        }
+
+        public void AddDealRejected()
+        {
+
         }
         #endregion
 
