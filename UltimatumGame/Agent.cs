@@ -83,7 +83,7 @@ namespace UltimatumGame
 
             }
         }
-        public double FutureRewardProposer(Agent FutureAgent, int DealOffered)
+        private double FutureRewardProposer(Agent FutureAgent, int DealOffered)
         {
             double[] acceptanceRewards = new double[101];
             double[] rejectionRewards = new double[101];
@@ -108,7 +108,7 @@ namespace UltimatumGame
             else
                 return rejectionRewards.Max();
         }
-        public double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
+        private double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
         {
             double[] probabilityDistribution = new double[101];
             
@@ -124,6 +124,28 @@ namespace UltimatumGame
 
             return probabilityDistribution;
         }
+
+        private double[] ProbabilityDistributionProposer(Agent agent)
+        {
+            List<int> dealsProposed = agent.GetDealsProposed();
+            int highestOffer = dealsProposed.Max();
+            double fraction = 1/(100 - highestOffer);
+            double[] distribution = new double[101];
+            double maxDistribution = 1;
+
+            for (int i = 0; i < 101; i++)
+            {
+                if (i < highestOffer)
+                    distribution[i] = 0;
+                else
+                {
+                    distribution[i] = maxDistribution;
+                    maxDistribution -= fraction;
+                }
+            }
+
+            return distribution;
+        } 
 
         // Implement these
         public int MakeOffer(Agent responder)
@@ -141,9 +163,25 @@ namespace UltimatumGame
             return Array.IndexOf(rewards, rewards.Max());
         }
 
-        public bool AcceptOrReject(Agent agent, int offer)
+        public bool AcceptOrReject(Agent proposer)
         {
+            List<int> acceptedDeals = proposer.GetDealsAccepted();
+            double[] probabilityDistribution = ProbabilityDistributionProposer(proposer);
+
+            int acceptOffer = proposer.GetOffer();
+
+
             return true;
+        }
+
+        public void AddDealAccepted()
+        {
+
+        }
+
+        public void AddDealRejected()
+        {
+
         }
         #endregion
 
