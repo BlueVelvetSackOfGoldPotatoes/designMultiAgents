@@ -13,13 +13,15 @@ namespace UltimatumGame
         private int WorldY { get; set; }
         private int Iterations { get; set; }
         private Agent[][] World { get; set; }
+        private Agent Agent1 { get; set; }
+        private Agent Agent2 { get; set; }
         #endregion
 
         #region Constructor Methods
-        public UltimatumGame(int Worldx, int Worldy, int iterations) // Other variables to determine how much ToM levels occur should go here
+        public UltimatumGame(int WorldLength, int iterations) // Other variables to determine how much ToM levels occur should go here
         {
-            WorldX = Worldx;
-            WorldY = Worldy;
+            WorldX = WorldLength;
+            WorldY = WorldLength;
             Iterations = iterations;
             World = new Agent[WorldX][];
 
@@ -27,6 +29,13 @@ namespace UltimatumGame
                 World[i] = new Agent[WorldY];
 
             Initialize();        
+        }
+
+        public UltimatumGame(int ToMLevelAgent1, int ToMLevelAgent2, int iterations)
+        {
+            Agent1 = new Agent(ToMLevelAgent1);
+            Agent2 = new Agent(ToMLevelAgent2);
+            Iterations = iterations;
         }
         #endregion
 
@@ -46,6 +55,7 @@ namespace UltimatumGame
             }
         }
 
+        // THis needs to be reworked - the logic for the game nees to take into account the ToM level of opponent
         private void UltimatumGameBasic(Agent agent1, Agent agent2)
         {
             int offer = agent1.GetOffer();
@@ -166,6 +176,30 @@ namespace UltimatumGame
             {
                 Console.WriteLine("--------------------Iteration " + (i + 1) + "--------------------");
                 Tick();
+            }
+        }
+
+        public void TickSingle()
+        {
+            UltimatumGameBasic(Agent1, Agent2);
+            UltimatumGameBasic(Agent2, Agent1);
+
+            Agent1.CompareScores(new List<Agent>{Agent2});
+            Agent2.CompareScores(new List<Agent> { Agent1 });
+
+            Console.WriteLine("\t\t| Agent 1 \t| Agent 2");
+            Console.WriteLine("Offer\t\t| "+Agent1.GetOffer()+ " \t\t| " + Agent2.GetOffer());
+            Console.WriteLine("Threshold\t| " + Agent1.GetAcceptanceThreshold() + " \t\t| " + Agent2.GetAcceptanceThreshold());
+            Console.WriteLine("Score\t\t| " + Agent1.GetScore() + " \t\t| " + Agent2.GetScore());
+
+        }
+
+        public void PlaySingle()
+        {
+            for (int i = 0; i < Iterations; i++)
+            {
+                Console.WriteLine("--------------------Iteration " + (i + 1) + "--------------------");
+                TickSingle();
             }
         }
         #endregion
