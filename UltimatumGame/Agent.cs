@@ -83,6 +83,7 @@ namespace UltimatumGame
 
             }
         }
+        // ---------------------- Functions needed for deciding action of proposer ---------------------- 
         public double FutureRewardProposer(Agent FutureAgent, int DealOffered)
         {
             double[] acceptanceRewards = new double[101];
@@ -113,26 +114,28 @@ namespace UltimatumGame
             double[] probabilityDistribution = new double[101];
             
             if (DealsAccepted.Count == 0)
+                for (int i = 0; i < 51; i++)
+                    probabilityDistribution[i] = 100;
                 for (int i = 51; i < 101; i++)
                     probabilityDistribution[i] = 100 - ((i - 50) * 0.5);
             else
             {
                 int lowest = DealsAccepted.Min();
+                for (int i = lowest; i <= 101; i++)
+                    probabilityDistribution[i] = 100;
                 for (int i = lowest; i >= 0; i--)
                     probabilityDistribution[i] = 100 - i / lowest;
             }
 
             return probabilityDistribution;
         }
-
-        // Implement these
-        public int MakeOffer(Agent responder)
+        public int DecideBestOffer(Agent responder)
         {
             double[] rewards = new double[101];
             double futureRewards = 0;
             double[] probabilityDistribution = ProbabilityDistributionResponder(responder.GetDealsAccepted());
 
-            for (int dealVal = 0.; dealVal < 101; dealVal++)
+            for (int dealVal = 0; dealVal < 101; dealVal++)
             {
                 futureRewards = FutureRewardProposer(responder, dealVal);
                 rewards[dealVal] = probabilityDistribution[dealVal] * (dealVal - 100 + futureRewards);
@@ -140,10 +143,74 @@ namespace UltimatumGame
 
             return Array.IndexOf(rewards, rewards.Max());
         }
-
-        public bool AcceptOrReject(Agent agent, int offer)
+        // ---------------------- Functions needed for deciding action of responder ---------------------- 
+        public double FutureRewardAcceptResponder(Agent FutureAgent, int DealOffered)
         {
-            return true;
+            double[] Rewards = new double[101];
+
+            List<int> agent1Prospects = FutureAgent.GetDealsProposed();
+            agent1Prospects.Add(DealOffered);
+            double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
+
+            for (int deal = 0; deal < 101; deal++)
+            {
+                Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+            }
+
+            return Array.IndexOf(Rewards, Rewards.Max());
+        }
+        public double FutureRewardRejectResponder(Agent FutureAgent, int DealOffered)
+        {
+            double[] Rewards = new double[101];
+
+            List<int> agent1Prospects = FutureAgent.GetDealsProposed();
+            agent1Prospects.Add(DealOffered);
+            double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
+
+            for (int deal = 0; deal < 101; deal++)
+            {
+                Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+            }
+
+            return Array.IndexOf(Rewards, Rewards.Max());
+        }
+        public double[] ProbabilityDistributionProposer(List<int> DealsProposed)
+        {
+            double[] probabilityDistribution = new double[101];
+            // It will be difficult to come up with a good function for this
+            if (DealsProposed.Count == 0)
+                for (int i = 0; i < 50; i++)
+                    probabilityDistribution[i] = i*2;
+                for (int i = 50; i < 101; i++)
+                    probabilityDistribution[i] = 100;
+            else
+            {
+                int highest = DealsProposed.Max();
+                for (int i = highest; i > 0; i--)
+                    probabilityDistribution[i] = i/(highest/100);
+                for (int i = highest+1; i < 101; i++)
+                    probabilityDistribution[i] = 0;
+            }
+            return probabilityDistribution;
+        }
+        public int DecideRejectAccept(Agent Proposer, int DealOffered)
+        {
+            double futureRewardsAccept = FutureRewardAcceptResponder(responder, DealOffered);
+            double futureRewardsReject = FutureRewardRejectResponder(responder, DealOffered);
+
+            double AcceptOffer = DealOffered + futureRewardsAccept;
+            double RejectOffer = futureRewardsReject;
+
+            if (AcceptOffer > RejectOffer)
+            // Accept the offer
+            {
+                return 1;
+            }
+            else
+            // Reject the offer
+            {
+                return 0;
+            }
         }
         #endregion
 
