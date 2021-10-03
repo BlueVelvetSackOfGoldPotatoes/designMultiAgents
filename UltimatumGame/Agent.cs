@@ -83,6 +83,7 @@ namespace UltimatumGame
 
             }
         }
+
         // ---------------------- Functions needed for deciding action of proposer ---------------------- 
         public double FutureRewardProposer(Agent FutureAgent, int DealOffered)
         {
@@ -112,12 +113,14 @@ namespace UltimatumGame
         private double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
         {
             double[] probabilityDistribution = new double[101];
-            
+
             if (DealsAccepted.Count == 0)
+            {
                 for (int i = 0; i < 51; i++)
                     probabilityDistribution[i] = 100;
                 for (int i = 51; i < 101; i++)
                     probabilityDistribution[i] = 100 - ((i - 50) * 0.5);
+            }
             else
             {
                 int lowest = DealsAccepted.Min();
@@ -179,24 +182,26 @@ namespace UltimatumGame
             double[] probabilityDistribution = new double[101];
             // It will be difficult to come up with a good function for this
             if (DealsProposed.Count == 0)
+            {
                 for (int i = 0; i < 50; i++)
-                    probabilityDistribution[i] = i*2;
+                    probabilityDistribution[i] = i * 2;
                 for (int i = 50; i < 101; i++)
                     probabilityDistribution[i] = 100;
+            }
             else
             {
                 int highest = DealsProposed.Max();
                 for (int i = highest; i > 0; i--)
-                    probabilityDistribution[i] = i/(highest/100);
-                for (int i = highest+1; i < 101; i++)
+                    probabilityDistribution[i] = i / (highest / 100);
+                for (int i = highest + 1; i < 101; i++)
                     probabilityDistribution[i] = 0;
             }
             return probabilityDistribution;
         }
-        public int DecideRejectAccept(Agent Proposer, int DealOffered)
+        public bool DecideRejectAccept(Agent Proposer, int DealOffered)
         {
-            double futureRewardsAccept = FutureRewardAcceptResponder(responder, DealOffered);
-            double futureRewardsReject = FutureRewardRejectResponder(responder, DealOffered);
+            double futureRewardsAccept = FutureRewardAcceptResponder(Proposer, DealOffered);
+            double futureRewardsReject = FutureRewardRejectResponder(Proposer, DealOffered);
 
             double AcceptOffer = DealOffered + futureRewardsAccept;
             double RejectOffer = futureRewardsReject;
@@ -204,23 +209,23 @@ namespace UltimatumGame
             if (AcceptOffer > RejectOffer)
             // Accept the offer
             {
-                return 1;
+                return true;
             }
             else
             // Reject the offer
             {
-                return 0;
+                return false;
             }
         }
 
-        public void AddDealAccepted()
+        public void AddDealAccepted(int deal)
         {
-
+            DealsAccepted.Add(deal);
         }
 
-        public void AddDealRejected()
+        public void AddDealProposed(int deal)
         {
-
+            DealsProposed.Add(deal);
         }
         #endregion
 
