@@ -126,9 +126,19 @@ namespace UltimatumGame
         }
 
         // Implement these
-        public int MakeOffer(Agent agent)
+        public int MakeOffer(Agent responder)
         {
-            return 0;
+            double[] rewards = new double[101];
+            double futureRewards = 0;
+            double[] probabilityDistribution = ProbabilityDistributionResponder(responder.GetDealsAccepted());
+
+            for (int dealVal = 0.; dealVal < 101; dealVal++)
+            {
+                futureRewards = FutureRewardProposer(responder, dealVal);
+                rewards[dealVal] = probabilityDistribution[dealVal] * (dealVal - 100 + futureRewards);
+            }
+
+            return Array.IndexOf(rewards, rewards.Max());
         }
 
         public bool AcceptOrReject(Agent agent, int offer)
