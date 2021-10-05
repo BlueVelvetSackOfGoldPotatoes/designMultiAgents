@@ -68,6 +68,22 @@ namespace UltimatumGame
             }
         }
 
+
+        private void UltimatumGameToM0(Agent agent1, Agent agent2)
+        {
+            int offer = agent1.DecideBestOffer(agent2);
+            bool result = agent2.DecideRejectAccept(agent1, offer);
+
+            if (result)
+            {
+                agent1.AddDealProposed(offer);
+                agent2.AddDealAccepted(offer);
+
+                agent1.AdjustScore(100 - offer);
+                agent2.AdjustScore(offer);
+            }
+        }
+
         public void Tick()
         {
             // Play UG Loop
@@ -181,15 +197,17 @@ namespace UltimatumGame
 
         public void TickSingle()
         {
-            UltimatumGameBasic(Agent1, Agent2);
-            UltimatumGameBasic(Agent2, Agent1);
+            //UltimatumGameBasic(Agent1, Agent2);
+            //UltimatumGameBasic(Agent2, Agent1);
+            UltimatumGameToM0(Agent1, Agent2);
+            UltimatumGameToM0(Agent2, Agent1);
 
-            Agent1.CompareScores(new List<Agent>{Agent2});
-            Agent2.CompareScores(new List<Agent> { Agent1 });
+            //Agent1.CompareScores(new List<Agent>{Agent2});
+            //Agent2.CompareScores(new List<Agent> {Agent1 });
 
             Console.WriteLine("\t\t| Agent 1 \t| Agent 2");
-            Console.WriteLine("Offer\t\t| "+Agent1.GetOffer()+ " \t\t| " + Agent2.GetOffer());
-            Console.WriteLine("Threshold\t| " + Agent1.GetAcceptanceThreshold() + " \t\t| " + Agent2.GetAcceptanceThreshold());
+            //Console.WriteLine("Offer\t\t| "+Agent1.GetOffer()+ " \t\t| " + Agent2.GetOffer());
+            // Console.WriteLine("Threshold\t| " + Agent1.GetAcceptanceThreshold() + " \t\t| " + Agent2.GetAcceptanceThreshold());
             Console.WriteLine("Score\t\t| " + Agent1.GetScore() + " \t\t| " + Agent2.GetScore());
 
         }

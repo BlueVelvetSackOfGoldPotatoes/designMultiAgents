@@ -96,16 +96,16 @@ namespace UltimatumGame
                 agent2AcceptProspects.Add(i);
 
             agent2AcceptProspects.Add(DealOffered);
-            double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2RejectProspects);
-            double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2AcceptProspects);
+            double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
+            double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                acceptanceRewards[deal] = probabilityDistributionAcceptance.ElementAt(deal) * (deal - 100);
-                rejectionRewards[deal] = probabilityDistributionRejection.ElementAt(deal) * (deal - 100);
+                acceptanceRewards[deal] = probabilityDistributionAcceptance.ElementAt(deal) * (100 - deal);
+                rejectionRewards[deal] = probabilityDistributionRejection.ElementAt(deal) * (100 - deal);
             }
 
-            if (acceptanceRewards.Max() > rejectionRewards.Min())
+            if (acceptanceRewards.Max() > rejectionRewards.Max())
                 return acceptanceRewards.Max();
             else
                 return rejectionRewards.Max();
@@ -117,31 +117,31 @@ namespace UltimatumGame
             if (DealsAccepted.Count == 0)
             {
                 for (int i = 0; i < 51; i++)
-                    probabilityDistribution[i] = 100;
+                    probabilityDistribution[i] = i * 2;
                 for (int i = 51; i < 101; i++)
-                    probabilityDistribution[i] = 100 - ((i - 50) * 0.5);
+                    probabilityDistribution[i] = 100;
             }
             else
             {
                 int lowest = DealsAccepted.Min();
-                for (int i = lowest; i <= 101; i++)
+                for (int i = lowest; i < 101; i++)
                     probabilityDistribution[i] = 100;
-                for (int i = lowest; i >= 0; i--)
-                    probabilityDistribution[i] = 100 - i / lowest;
+                for (int i = 0; i < lowest; i++)
+                    probabilityDistribution[i] = (i / lowest)*100;
             }
 
-            return probabilityDistribution;
+            return probabilityDistribution.Select(x => x/100).ToArray();
         }
         public int DecideBestOffer(Agent responder)
         {
             double[] rewards = new double[101];
-            double futureRewards = 0;
+            double futureRewards;
             double[] probabilityDistribution = ProbabilityDistributionResponder(responder.GetDealsAccepted());
 
             for (int dealVal = 0; dealVal < 101; dealVal++)
             {
                 futureRewards = FutureRewardProposer(responder, dealVal);
-                rewards[dealVal] = probabilityDistribution[dealVal] * (dealVal - 100 + futureRewards);
+                rewards[dealVal] = probabilityDistribution[dealVal] * (100-dealVal + futureRewards);
             }
 
             return Array.IndexOf(rewards, rewards.Max());
@@ -183,23 +183,30 @@ namespace UltimatumGame
             // It will be difficult to come up with a good function for this
             if (DealsProposed.Count == 0)
             {
-                for (int i = 0; i < 50; i++)
-                    probabilityDistribution[i] = i * 2;
-                for (int i = 50; i < 101; i++)
-                    probabilityDistribution[i] = 100;
-            }
-            else
-            {
-                int highest = DealsProposed.Max();
-                for (int i = highest; i > 0; i--)
-                    probabilityDistribution[i] = i / (highest / 100);
-                for (int i = highest + 1; i < 101; i++)
+                for (int i = 0; i < 51; i++)
+                    probabilityDistribution[i] = 100 - ((double) i * 2);
+                for (int i = 51; i < 101; i++)
                     probabilityDistribution[i] = 0;
             }
-            return probabilityDistribution;
+            //else if (DealsProposed.Max() == 0)
+            //{
+            //    for (int i = 1; i < 101; i++)
+            //        probabilityDistribution[i] = 100 - ((i - 1));
+            //}
+            else
+            {
+                int dealValue = DealsProposed.Min();
+                for (int i = 0; i < dealValue; i++)
+                    probabilityDistribution[i] = 100 - ((double) i/dealValue)*100;
+                for (int i = dealValue + 1; i < 101; i++) 
+                    probabilityDistribution[i] = 0;
+            }
+            return probabilityDistribution.Select(x => x / 100).ToArray();
         }
         public bool DecideRejectAccept(Agent Proposer, int DealOffered)
         {
+            Console.WriteLine("Offer: "+DealOffered);
+
             double futureRewardsAccept = FutureRewardAcceptResponder(Proposer, DealOffered);
             double futureRewardsReject = FutureRewardRejectResponder(Proposer, DealOffered);
 
@@ -209,11 +216,13 @@ namespace UltimatumGame
             if (AcceptOffer > RejectOffer)
             // Accept the offer
             {
+                Console.WriteLine("I Accepted");
                 return true;
             }
             else
             // Reject the offer
             {
+                Console.WriteLine("I Rejected");
                 return false;
             }
         }
