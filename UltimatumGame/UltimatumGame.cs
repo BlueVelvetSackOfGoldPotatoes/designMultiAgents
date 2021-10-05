@@ -33,8 +33,8 @@ namespace UltimatumGame
 
         public UltimatumGame(int ToMLevelAgent1, int ToMLevelAgent2, int iterations)
         {
-            Agent1 = new Agent(ToMLevelAgent1);
-            Agent2 = new Agent(ToMLevelAgent2);
+            Agent1 = new Agent(0.1,ToMLevelAgent1);
+            Agent2 = new Agent(0.1,ToMLevelAgent2);
             Iterations = iterations;
         }
         #endregion
@@ -50,7 +50,7 @@ namespace UltimatumGame
                 for (int j = 0; j < WorldY; j++)
                 {
                     // This part will change once ToM is implemented
-                    World[i][j] = new Agent();
+                    World[i][j] = new Agent(0.1);
                 }
             }
         }
@@ -81,6 +81,7 @@ namespace UltimatumGame
 
                 agent1.AdjustScore(100 - offer);
                 agent2.AdjustScore(offer);
+                // Update Prob Dist for accepting or rejecting agent
             }
         }
 

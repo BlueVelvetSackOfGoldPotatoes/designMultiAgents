@@ -4,6 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
+// 50 probability for everyone
+// Just current reward for ToM0
+
 namespace UltimatumGame
 {
     /// <summary>
@@ -23,6 +27,7 @@ namespace UltimatumGame
 
         #region Agent Variables
         private Random random;
+        private double LearningSpeed { get; set; }
         private double Score { get; set; }
         private int Offer { get; set; }
         private List<int> DealsProposed { get; set; }
@@ -30,22 +35,32 @@ namespace UltimatumGame
         private List<int> DealsAccepted { get; set; }
         private double UpdateWeight { get; set; }
         private ToMLevel ToMLevel { get; set; }
+        private double[] ResponderProbabilityDistribution { get; set; }
+        private double[] ProposerProbabilityDistribution { get; set; }
+
         // Get the Enum Values
         private ToMLevel[] levels = (ToMLevel[])Enum.GetValues(typeof(ToMLevel));
         #endregion
 
         #region Constructor Method(s)
-        public Agent(int TomLevel=0)
+        public Agent(double learningSpeed, int TomLevel=0)
         {
             // Set values
             random = new Random();
             UpdateWeight = 0.5;
             DealsProposed = new List<int>();
             DealsAccepted = new List<int>();
+            LearningSpeed = learningSpeed;
 
             // Set Thresholds randomly
             Offer = random.Next(0, 101);
             AcceptanceThreshold = random.Next(0, 101);
+
+            // Set Probability Distributions
+            ProposerProbabilityDistribution = new double[101];
+            ResponderProbabilityDistribution = new double[101];
+            Array.Fill(ProposerProbabilityDistribution, 0.5);
+            Array.Fill(ResponderProbabilityDistribution, 0.5);
 
             // Set ToM Level
             try
@@ -85,24 +100,29 @@ namespace UltimatumGame
         }
 
         // ---------------------- Functions needed for deciding action of proposer ---------------------- 
-        public double FutureRewardProposer(Agent FutureAgent, int DealOffered)
+        // Deal offered represents the value that the responder will get if the deal is accepted
+        public double FutureRewardProposer(Agent Responder, int DealOffered)
         {
             double[] acceptanceRewards = new double[101];
             double[] rejectionRewards = new double[101];
 
-            List<int> agent2RejectProspects = FutureAgent.GetDealsAccepted();
-            List<int> agent2AcceptProspects = new List<int>();
-            foreach (int i in agent2RejectProspects)
-                agent2AcceptProspects.Add(i);
+            //List<int> agent2RejectProspects = Responder.GetDealsAccepted();
+            //List<int> agent2AcceptProspects = new List<int>();
+            //foreach (int i in agent2RejectProspects)
+            //    agent2AcceptProspects.Add(i);
+            //agent2AcceptProspects.Add(DealOffered);
+            double[] tmp = Responder.GetProposerPorbabilityDistribution();
+            double[] ResponderRejectPropsects = FutureAdjustProbabilityDistribution(Responder.GetResponderPorbabilityDistribution(), DealOffered, false);
+            double[] ResponderAcceptProspects = FutureAdjustProbabilityDistribution(Responder.GetResponderPorbabilityDistribution(), DealOffered, true);
+            tmp = Responder.GetResponderPorbabilityDistribution();
 
-            agent2AcceptProspects.Add(DealOffered);
-            double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
-            double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
+            //double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
+            //double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                acceptanceRewards[deal] = probabilityDistributionAcceptance.ElementAt(deal) * (100 - deal);
-                rejectionRewards[deal] = probabilityDistributionRejection.ElementAt(deal) * (100 - deal);
+                acceptanceRewards[deal] = ResponderAcceptProspects.ElementAt(deal) * (100 - deal);
+                rejectionRewards[deal] = ResponderRejectPropsects.ElementAt(deal) * (100 - deal);
             }
 
             if (acceptanceRewards.Max() > rejectionRewards.Max())
@@ -110,6 +130,8 @@ namespace UltimatumGame
             else
                 return rejectionRewards.Max();
         }
+
+        // --------------------------
         private double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
         {
             double[] probabilityDistribution = new double[101];
@@ -127,16 +149,17 @@ namespace UltimatumGame
                 for (int i = lowest; i < 101; i++)
                     probabilityDistribution[i] = 100;
                 for (int i = 0; i < lowest; i++)
-                    probabilityDistribution[i] = (i / lowest)*100;
+                    probabilityDistribution[i] = (i / lowest) * 100;
             }
 
-            return probabilityDistribution.Select(x => x/100).ToArray();
+            return probabilityDistribution.Select(x => x / 100).ToArray();
         }
         public int DecideBestOffer(Agent responder)
         {
             double[] rewards = new double[101];
             double futureRewards;
-            double[] probabilityDistribution = ProbabilityDistributionResponder(responder.GetDealsAccepted());
+            double[] probabilityDistribution = responder.GetResponderPorbabilityDistribution();
+            // ProbabilityDistributionResponder(responder.GetDealsAccepted());
 
             for (int dealVal = 0; dealVal < 101; dealVal++)
             {
@@ -146,37 +169,50 @@ namespace UltimatumGame
 
             return Array.IndexOf(rewards, rewards.Max());
         }
+
         // ---------------------- Functions needed for deciding action of responder ---------------------- 
-        public double FutureRewardAcceptResponder(Agent FutureAgent, int DealOffered)
+        public double FutureRewardAcceptResponder(Agent Proposer, int DealOffered)
         {
             double[] Rewards = new double[101];
 
-            List<int> agent1Prospects = FutureAgent.GetDealsProposed();
-            agent1Prospects.Add(DealOffered);
-            double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
+            //List<int> agent1Prospects = Proposer.GetDealsProposed();
+            double[] Agent1Prospects = Proposer.GetProposerPorbabilityDistribution();
+
+            //agent1Prospects.Add(DealOffered);
+            Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, true);
+            
+            //double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+                //Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+                Rewards[deal] = Agent1Prospects[deal] * deal;
             }
 
             return Array.IndexOf(Rewards, Rewards.Max());
         }
-        public double FutureRewardRejectResponder(Agent FutureAgent, int DealOffered)
+        public double FutureRewardRejectResponder(Agent Proposer, int DealOffered)
         {
             double[] Rewards = new double[101];
 
-            List<int> agent1Prospects = FutureAgent.GetDealsProposed();
-            agent1Prospects.Add(DealOffered);
-            double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
+            //List<int> agent1Prospects = Proposer.GetDealsProposed();
+            double[] Agent1Prospects = Proposer.GetProposerPorbabilityDistribution();
+
+            //agent1Prospects.Add(DealOffered);
+            Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, false);
+
+            //double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+                //Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
+                Rewards[deal] = Agent1Prospects[deal] * deal;
             }
 
             return Array.IndexOf(Rewards, Rewards.Max());
         }
+
+        // --------------------------
         public double[] ProbabilityDistributionProposer(List<int> DealsProposed)
         {
             double[] probabilityDistribution = new double[101];
@@ -184,7 +220,7 @@ namespace UltimatumGame
             if (DealsProposed.Count == 0)
             {
                 for (int i = 0; i < 51; i++)
-                    probabilityDistribution[i] = 100 - ((double) i * 2);
+                    probabilityDistribution[i] = 100 - ((double)i * 2);
                 for (int i = 51; i < 101; i++)
                     probabilityDistribution[i] = 0;
             }
@@ -197,8 +233,8 @@ namespace UltimatumGame
             {
                 int dealValue = DealsProposed.Min();
                 for (int i = 0; i < dealValue; i++)
-                    probabilityDistribution[i] = 100 - ((double) i/dealValue)*100;
-                for (int i = dealValue + 1; i < 101; i++) 
+                    probabilityDistribution[i] = 100 - ((double)i / dealValue) * 100;
+                for (int i = dealValue + 1; i < 101; i++)
                     probabilityDistribution[i] = 0;
             }
             return probabilityDistribution.Select(x => x / 100).ToArray();
@@ -238,6 +274,27 @@ namespace UltimatumGame
         }
         #endregion
 
+        private double[] FutureAdjustProbabilityDistribution(double[] Distribution, int index, bool PosOrNeg)
+        {
+            double[] tmp = Distribution.Select(a => a).ToArray();
+
+            if (PosOrNeg)
+                tmp[index] = tmp[index] * (1 + this.LearningSpeed);
+            else
+                tmp[index] = tmp[index] * (1 - this.LearningSpeed);
+
+            return tmp;
+        }
+        public double[] AdjustProbabilityDistribution(double[] Distribution, int index, bool PosOrNeg)
+        {
+            if (PosOrNeg)
+                Distribution[index] = (double)Distribution[index] * (1 + this.LearningSpeed);
+            else
+                Distribution[index] = (double)Distribution[index] * (1 - this.LearningSpeed);
+
+            return Distribution;
+        }
+
         #region Getter Methods
         public string toString()
         {
@@ -268,6 +325,28 @@ namespace UltimatumGame
         public double GetScore()
         {
             return Score;
+        }
+
+        public double[] GetResponderPorbabilityDistribution()
+        {
+            return ResponderProbabilityDistribution;
+        }
+
+        public double[] GetProposerPorbabilityDistribution()
+        {
+            return ProposerProbabilityDistribution;
+        }
+        #endregion
+
+        #region Setter Methods
+        public void SetResponderProbabilityDistribution(double[] distribution)
+        {
+            this.ResponderProbabilityDistribution = distribution;
+        }
+
+        public void SetProposerProbabilityDistribution(double[] distribution)
+        {
+            this.ProposerProbabilityDistribution = distribution;
         }
         #endregion
     }
