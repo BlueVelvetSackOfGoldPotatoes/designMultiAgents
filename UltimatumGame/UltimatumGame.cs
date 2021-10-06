@@ -81,7 +81,16 @@ namespace UltimatumGame
 
                 agent1.AdjustScore(100 - offer);
                 agent2.AdjustScore(offer);
+
+
                 // Update Prob Dist for accepting or rejecting agent
+                agent1.AdjustProbabilityDistribution(false, offer, true);
+                agent2.AdjustProbabilityDistribution(true, offer, true);
+            }
+            else
+            {
+                agent1.AdjustProbabilityDistribution(false, offer, false);
+                agent2.AdjustProbabilityDistribution(true, offer, false);
             }
         }
 

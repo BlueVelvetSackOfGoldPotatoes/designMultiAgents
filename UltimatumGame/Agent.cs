@@ -285,14 +285,23 @@ namespace UltimatumGame
 
             return tmp;
         }
-        public double[] AdjustProbabilityDistribution(double[] Distribution, int index, bool PosOrNeg)
+        public void AdjustProbabilityDistribution(bool ResponderOrProposer, int index, bool PosOrNeg)
         {
-            if (PosOrNeg)
-                Distribution[index] = (double)Distribution[index] * (1 + this.LearningSpeed);
+            if (ResponderOrProposer)
+            {
+                if (PosOrNeg)
+                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 + this.LearningSpeed);
+                else
+                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 - this.LearningSpeed);
+            }
             else
-                Distribution[index] = (double)Distribution[index] * (1 - this.LearningSpeed);
-
-            return Distribution;
+            {
+                if (PosOrNeg)
+                   this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 + this.LearningSpeed);
+                else
+                    this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 - this.LearningSpeed);
+            }
+            
         }
 
         #region Getter Methods
