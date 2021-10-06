@@ -31,10 +31,10 @@ namespace UltimatumGame
             Initialize();        
         }
 
-        public UltimatumGame(int ToMLevelAgent1, int ToMLevelAgent2, int iterations)
+        public UltimatumGame(int ToMLevelAgent1, int ToMLevelAgent2, double Agent1LearningRate, double Agent2LearningRate, int iterations)
         {
-            Agent1 = new Agent(0.1,ToMLevelAgent1);
-            Agent2 = new Agent(0.1,ToMLevelAgent2);
+            Agent1 = new Agent(Agent1LearningRate,ToMLevelAgent1);
+            Agent2 = new Agent(Agent2LearningRate,ToMLevelAgent2);
             Iterations = iterations;
         }
         #endregion

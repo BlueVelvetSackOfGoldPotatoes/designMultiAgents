@@ -285,6 +285,31 @@ namespace UltimatumGame
             else
                 tmp[index] = tmp[index] * (1 - this.LearningSpeed);
 
+            double fractionalLearningSpeed = this.LearningSpeed / 10;
+            double bellCurveUpdateVal = fractionalLearningSpeed;
+            for (int i = (index - 10); i < index; i++)
+            {
+                try
+                {
+                    if (PosOrNeg)
+                        tmp[i] = (double)tmp[i] * (1 + bellCurveUpdateVal);
+                    else
+                        tmp[i] = (double)tmp[i] * (1 - bellCurveUpdateVal);
+                }
+                catch { }
+
+                try
+                {
+                    if (PosOrNeg)
+                        tmp[index - i] = (double)tmp[index - i] * (1 + bellCurveUpdateVal);
+                    else
+                        tmp[index - i] = (double)tmp[index - i] * (1 - bellCurveUpdateVal);
+                }
+                catch { }
+
+                bellCurveUpdateVal += fractionalLearningSpeed;
+            }
+
             return tmp;
         }
         public void AdjustProbabilityDistribution(bool ResponderOrProposer, int index, bool PosOrNeg)
@@ -303,6 +328,52 @@ namespace UltimatumGame
                 else
                     this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 - this.LearningSpeed);
             }
+
+            double fractionalLearningSpeed = this.LearningSpeed / 10;
+            double bellCurveUpdateVal = fractionalLearningSpeed;
+            for (int i = index-10; i < index; i++)
+            {       
+                try
+                {
+                    if (ResponderOrProposer)
+                    {
+                        if (PosOrNeg)
+                            this.ResponderProbabilityDistribution[i] = (double)this.ResponderProbabilityDistribution[i] * (1 + bellCurveUpdateVal);
+                        else
+                            this.ResponderProbabilityDistribution[i] = (double)this.ResponderProbabilityDistribution[i] * (1 - bellCurveUpdateVal);
+                    }
+                    else
+                    {
+                        if (PosOrNeg)
+                            this.ProposerProbabilityDistribution[i] = (double)this.ProposerProbabilityDistribution[i] * (1 + bellCurveUpdateVal);
+                        else
+                            this.ProposerProbabilityDistribution[i] = (double)this.ProposerProbabilityDistribution[i] * (1 - bellCurveUpdateVal);
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (ResponderOrProposer)
+                    {
+                        if (PosOrNeg)
+                            this.ResponderProbabilityDistribution[index - i] = (double)this.ResponderProbabilityDistribution[index - i] * (1 + bellCurveUpdateVal);
+                        else
+                            this.ResponderProbabilityDistribution[index - i] = (double)this.ResponderProbabilityDistribution[index - i] * (1 - bellCurveUpdateVal);
+                    }
+                    else
+                    {
+                        if (PosOrNeg)
+                            this.ProposerProbabilityDistribution[index - i] = (double)this.ProposerProbabilityDistribution[index - i] * (1 + bellCurveUpdateVal);
+                        else
+                            this.ProposerProbabilityDistribution[index - i] = (double)this.ProposerProbabilityDistribution[index - i] * (1 - bellCurveUpdateVal);
+                    }
+                }
+                catch { }
+
+                bellCurveUpdateVal += fractionalLearningSpeed;
+            }
+            
             
         }
         #endregion
@@ -350,16 +421,5 @@ namespace UltimatumGame
         }
         #endregion
 
-        #region Setter Methods
-        public void SetResponderProbabilityDistribution(double[] distribution)
-        {
-            this.ResponderProbabilityDistribution = distribution;
-        }
-
-        public void SetProposerProbabilityDistribution(double[] distribution)
-        {
-            this.ProposerProbabilityDistribution = distribution;
-        }
-        #endregion
     }
 }
