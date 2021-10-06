@@ -62,6 +62,7 @@ namespace UltimatumGame
             Array.Fill(ProposerProbabilityDistribution, 0.5);
             Array.Fill(ResponderProbabilityDistribution, 0.5);
 
+
             // Set ToM Level
             try
             {
@@ -274,6 +275,7 @@ namespace UltimatumGame
         }
         #endregion
 
+        #region Auxilliary Methods
         private double[] FutureAdjustProbabilityDistribution(double[] Distribution, int index, bool PosOrNeg)
         {
             double[] tmp = Distribution.Select(a => a).ToArray();
@@ -303,6 +305,7 @@ namespace UltimatumGame
             }
             
         }
+        #endregion
 
         #region Getter Methods
         public string toString()
