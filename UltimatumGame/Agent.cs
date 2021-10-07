@@ -32,11 +32,37 @@ namespace UltimatumGame
         private int Offer { get; set; }
         private List<int> DealsProposed { get; set; }
         private int AcceptanceThreshold { get; set; }
+        private bool Attitude { get; set; }
         private List<int> DealsAccepted { get; set; }
         private double UpdateWeight { get; set; }
         private ToMLevel ToMLevel { get; set; }
         private double[] ResponderProbabilityDistribution { get; set; }
         private double[] ProposerProbabilityDistribution { get; set; }
+        private double AttitudeValue = 0.05;
+
+        // Shift distribution
+        // Attitude affects updates to probability dsitribution
+
+        // ----------------------------------------------------------------------
+        // Baseline - ToM 0
+        //  If agent 1 is Trustful - Adjust higher offers to have higher likelihoods - willing to do worse for self
+
+        // If agent 1 is Disgusted - Adjust lower offers to have higher likelihoods - not willing to do worse for self
+
+        // -----------------------------------------------------------------------
+        // ToM1 - update based on their feelings
+        // Agent 1 making offer = trustful (pos) ~> previous deal worked ~ I have ToM1
+        // Because im trustful im willing to offer a bit higher for agent 2
+
+        // Agent 2 disgusted = ~> Agent 1 want to offer higher deal
+        // Agent 1 see agent 2 attitude: would normally decrease deal but does nothing
+
+        // Agent 2 happy ~~> Increas likelyhood of worst cut because I know he is happy and is more likely to accept worse deal 
+        
+        // ---------------------------------------------------------------------
+        // ToM 2 - update based on both feelings - effectively ToM0
+        // Im agent 1 (proposer) and I am (+) - I know agent 2 knows I am (+) therefore knows I am willing to do worse for myself => lower offer
+        // 
 
         // Get the Enum Values
         private ToMLevel[] levels = (ToMLevel[])Enum.GetValues(typeof(ToMLevel));
@@ -56,6 +82,7 @@ namespace UltimatumGame
             DealsProposed = new List<int>();
             DealsAccepted = new List<int>();
             LearningSpeed = learningSpeed;
+            Attitude = true;
 
             // Set Thresholds randomly
             Offer = random.Next(0, 101);
@@ -128,10 +155,8 @@ namespace UltimatumGame
             //foreach (int i in agent2RejectProspects)
             //    agent2AcceptProspects.Add(i);
             //agent2AcceptProspects.Add(DealOffered);
-            double[] tmp = Responder.GetProposerProbabilityDistribution();
             double[] ResponderRejectPropsects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, false);
             double[] ResponderAcceptProspects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, true);
-            tmp = Responder.GetResponderProbabilityDistribution();
 
             //double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
             //double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
@@ -360,6 +385,8 @@ namespace UltimatumGame
                 bellCurveUpdateVal += fractionalLearningSpeed;
             }
 
+            NormalizeDistribution(tmp);
+
             return tmp;
         }
 
@@ -434,8 +461,25 @@ namespace UltimatumGame
 
                 bellCurveUpdateVal += fractionalLearningSpeed;
             }
-            
-            
+            if (PosOrNeg)
+                NormalizeDistribution(this.ProposerProbabilityDistribution);
+            else
+                NormalizeDistribution(this.ResponderProbabilityDistribution)
+        }
+
+        private void NormalizeDistribution(double[] distribution)
+        {
+            distribution.Select(x => (double)((x - distribution.Min()) / (distribution.Max() - distribution.Min())));
+        }
+
+        private void AdjustDistribution(double[] distribution, bool PosOrNeg)
+        {
+            if (PosOrNeg)
+                distribution.Select(x => (double) (x + AttitudeValue));
+            else
+                distribution.Select(x => (double) (x - AttitudeValue));
+
+            NormalizeDistribution(distribution);
         }
         #endregion
 
@@ -478,6 +522,11 @@ namespace UltimatumGame
         public double[] GetProposerProbabilityDistribution()
         {
             return ProposerProbabilityDistribution;
+        }
+
+        public bool GetAttitude()
+        {
+            return Attitude;
         }
         #endregion
 
