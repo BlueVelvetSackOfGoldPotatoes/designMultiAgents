@@ -28,9 +28,17 @@ namespace UltimatumGame
             for (int i = 0; i < WorldX; i++)
                 World[i] = new Agent[WorldY];
 
-            Initialize();        
+            InitializeGridWorld();        
         }
 
+        /// <summary>
+        /// Basic ultimatum game implementation 
+        /// </summary>
+        /// <param name="ToMLevelAgent1">The ToM Level of agent 1</param>
+        /// <param name="ToMLevelAgent2">The ToM Level of agent 2</param>
+        /// <param name="Agent1LearningRate">The learning rate of agent 1</param>
+        /// <param name="Agent2LearningRate">The learning rate of agent 1</param>
+        /// <param name="iterations">The number of iterations</param>
         public UltimatumGame(int ToMLevelAgent1, int ToMLevelAgent2, double Agent1LearningRate, double Agent2LearningRate, int iterations)
         {
             Agent1 = new Agent(Agent1LearningRate,ToMLevelAgent1);
@@ -43,7 +51,7 @@ namespace UltimatumGame
         /// <summary>
         /// Method that iniitlizes all the plots as Agents
         /// </summary>
-        private void Initialize()
+        private void InitializeGridWorld()
         {
             for (int i = 0; i < WorldX; i++)
             {
@@ -55,7 +63,11 @@ namespace UltimatumGame
             }
         }
 
-        // THis needs to be reworked - the logic for the game nees to take into account the ToM level of opponent
+        /// <summary>
+        /// Basic ToM Game to test functionality
+        /// </summary>
+        /// <param name="agent1">Agent 1</param>
+        /// <param name="agent2">Agent 2</param>
         private void UltimatumGameBasic(Agent agent1, Agent agent2)
         {
             int offer = agent1.GetOffer();
@@ -68,7 +80,11 @@ namespace UltimatumGame
             }
         }
 
-
+        /// <summary>
+        /// UG Game as played by TOM Agents
+        /// </summary>
+        /// <param name="agent1"></param>
+        /// <param name="agent2"></param>
         private void UltimatumGameToM0(Agent agent1, Agent agent2)
         {
             int offer = agent1.DecideBestOffer(agent2);
@@ -94,7 +110,10 @@ namespace UltimatumGame
             }
         }
 
-        public void Tick()
+        /// <summary>
+        /// Run one iteration of the UG for all agents in the worldspace
+        /// </summary>
+        public void TickGridWorld()
         {
             // Play UG Loop
             for (int i = 0; i < WorldX; i++)
@@ -196,15 +215,21 @@ namespace UltimatumGame
             Console.WriteLine("Average Score: " + AverageScore/num);
         }
 
+        /// <summary>
+        /// Play the grid world for the number of iterations
+        /// </summary>
         public void Play()
         {
             for (int i = 0; i < Iterations; i++)
             {
                 Console.WriteLine("--------------------Iteration " + (i + 1) + "--------------------");
-                Tick();
+                TickGridWorld();
             }
         }
 
+        /// <summary>
+        /// TIck for the single agent game of UG
+        /// </summary>
         public void TickSingle()
         {
             //UltimatumGameBasic(Agent1, Agent2);
@@ -222,6 +247,9 @@ namespace UltimatumGame
 
         }
 
+        /// <summary>
+        /// Play the single agent game
+        /// </summary>
         public void PlaySingle()
         {
             for (int i = 0; i < Iterations; i++)

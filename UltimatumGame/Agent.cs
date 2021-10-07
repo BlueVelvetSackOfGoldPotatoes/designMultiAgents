@@ -19,7 +19,7 @@ namespace UltimatumGame
         ToM1,
         ToM2,
         ToM3,
-        ToMn // Might be interesting to see how an nth level ToM goes but can be removed
+        ToMn
     };
 
     class Agent
@@ -42,7 +42,12 @@ namespace UltimatumGame
         private ToMLevel[] levels = (ToMLevel[])Enum.GetValues(typeof(ToMLevel));
         #endregion
 
-        #region Constructor Method(s)
+        #region Constructor Method(s).
+        /// <summary>
+        /// Constructor Method for the Agent
+        /// </summary>
+        /// <param name="learningSpeed">The agents learning speed</param>
+        /// <param name="TomLevel">The level of ToM the agent has/param>
         public Agent(double learningSpeed, int TomLevel=0)
         {
             // Set values
@@ -59,6 +64,7 @@ namespace UltimatumGame
             // Set Probability Distributions
             ProposerProbabilityDistribution = new double[101];
             ResponderProbabilityDistribution = new double[101];
+
             Array.Fill(ProposerProbabilityDistribution, 0.5);
             Array.Fill(ResponderProbabilityDistribution, 0.5);
 
@@ -82,6 +88,11 @@ namespace UltimatumGame
         {
             Score += val;
         }
+
+        /// <summary>
+        /// Compare scores to the list of agents around you
+        /// </summary>
+        /// <param name="neighbours">a list of the neighbouring agents</param>
         public void CompareScores(List<Agent> neighbours)
         {
             Agent highestNeighbour = this;
@@ -101,7 +112,12 @@ namespace UltimatumGame
         }
 
         // ---------------------- Functions needed for deciding action of proposer ---------------------- 
-        // Deal offered represents the value that the responder will get if the deal is accepted
+        /// <summary>
+        /// A method that is used to calculate the future reward of offering any offer to the responder
+        /// </summary>
+        /// <param name="Responder">The responding agent</param>
+        /// <param name="DealOffered">the value that the responder will get if the deal is accepted</param>
+        /// <returns>a double representing the future rewards</returns>
         public double FutureRewardProposer(Agent Responder, int DealOffered)
         {
             double[] acceptanceRewards = new double[101];
@@ -112,10 +128,10 @@ namespace UltimatumGame
             //foreach (int i in agent2RejectProspects)
             //    agent2AcceptProspects.Add(i);
             //agent2AcceptProspects.Add(DealOffered);
-            double[] tmp = Responder.GetProposerPorbabilityDistribution();
-            double[] ResponderRejectPropsects = FutureAdjustProbabilityDistribution(Responder.GetResponderPorbabilityDistribution(), DealOffered, false);
-            double[] ResponderAcceptProspects = FutureAdjustProbabilityDistribution(Responder.GetResponderPorbabilityDistribution(), DealOffered, true);
-            tmp = Responder.GetResponderPorbabilityDistribution();
+            double[] tmp = Responder.GetProposerProbabilityDistribution();
+            double[] ResponderRejectPropsects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, false);
+            double[] ResponderAcceptProspects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, true);
+            tmp = Responder.GetResponderProbabilityDistribution();
 
             //double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
             //double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
@@ -155,11 +171,17 @@ namespace UltimatumGame
 
             return probabilityDistribution.Select(x => x / 100).ToArray();
         }
+
+        /// <summary>
+        /// A function that decides the best offer for the proposer to make based on the responder
+        /// </summary>
+        /// <param name="responder">The responder agent</param>
+        /// <returns>the amount to give to the responder</returns>
         public int DecideBestOffer(Agent responder)
         {
             double[] rewards = new double[101];
             double futureRewards;
-            double[] probabilityDistribution = responder.GetResponderPorbabilityDistribution();
+            double[] probabilityDistribution = responder.GetResponderProbabilityDistribution();
             // ProbabilityDistributionResponder(responder.GetDealsAccepted());
 
             for (int dealVal = 0; dealVal < 101; dealVal++)
@@ -172,12 +194,18 @@ namespace UltimatumGame
         }
 
         // ---------------------- Functions needed for deciding action of responder ---------------------- 
+        /// <summary>
+        /// Calculate the value to be gained by Responder for accepting
+        /// </summary>
+        /// <param name="Proposer">The proposing agent</param>
+        /// <param name="DealOffered">the value to be gained for the responder</param>
+        /// <returns>a double representing the value to be gained</returns>
         public double FutureRewardAcceptResponder(Agent Proposer, int DealOffered)
         {
             double[] Rewards = new double[101];
 
             //List<int> agent1Prospects = Proposer.GetDealsProposed();
-            double[] Agent1Prospects = Proposer.GetProposerPorbabilityDistribution();
+            double[] Agent1Prospects = Proposer.GetProposerProbabilityDistribution();
 
             //agent1Prospects.Add(DealOffered);
             Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, true);
@@ -192,12 +220,19 @@ namespace UltimatumGame
 
             return Array.IndexOf(Rewards, Rewards.Max());
         }
+
+        /// <summary>
+        /// Calculate the value to be gained by Responder for rejecting
+        /// </summary>
+        /// <param name="Proposer">The proposing agent</param>
+        /// <param name="DealOffered">the value to be gained for the responder</param>
+        /// <returns>a double representing the value to be gained</returns>
         public double FutureRewardRejectResponder(Agent Proposer, int DealOffered)
         {
             double[] Rewards = new double[101];
 
             //List<int> agent1Prospects = Proposer.GetDealsProposed();
-            double[] Agent1Prospects = Proposer.GetProposerPorbabilityDistribution();
+            double[] Agent1Prospects = Proposer.GetProposerProbabilityDistribution();
 
             //agent1Prospects.Add(DealOffered);
             Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, false);
@@ -225,11 +260,6 @@ namespace UltimatumGame
                 for (int i = 51; i < 101; i++)
                     probabilityDistribution[i] = 0;
             }
-            //else if (DealsProposed.Max() == 0)
-            //{
-            //    for (int i = 1; i < 101; i++)
-            //        probabilityDistribution[i] = 100 - ((i - 1));
-            //}
             else
             {
                 int dealValue = DealsProposed.Min();
@@ -240,10 +270,18 @@ namespace UltimatumGame
             }
             return probabilityDistribution.Select(x => x / 100).ToArray();
         }
+
+        /// <summary>
+        /// Calculate whether to accept or reject a deal based on the proposer
+        /// </summary>
+        /// <param name="Proposer">The proposing agent</param>
+        /// <param name="DealOffered">the value the responder stands to gain</param>
+        /// <returns>a boolean representing if the  offer has been accepted or rejected</returns>
         public bool DecideRejectAccept(Agent Proposer, int DealOffered)
         {
             Console.WriteLine("Offer: "+DealOffered);
 
+            // Calculate the reward to be gained by accepting and rejecting
             double futureRewardsAccept = FutureRewardAcceptResponder(Proposer, DealOffered);
             double futureRewardsReject = FutureRewardRejectResponder(Proposer, DealOffered);
 
@@ -276,17 +314,29 @@ namespace UltimatumGame
         #endregion
 
         #region Auxilliary Methods
+        /// <summary>
+        /// Method used to model the change done to a probability distribution for future rewards tracking
+        /// </summary>
+        /// <param name="Distribution">The probability distribution to model</param>
+        /// <param name="index">The index to change - and centre point of bell curve change</param>
+        /// <param name="PosOrNeg">Whether the change is positive or negative</param>
+        /// <returns>An adjusted distribution</returns>
         private double[] FutureAdjustProbabilityDistribution(double[] Distribution, int index, bool PosOrNeg)
         {
+            // Make a copy of the distribution to not chnage the original one
             double[] tmp = Distribution.Select(a => a).ToArray();
 
+            // Edit value at index by a factor adjusted for the learning speeed
             if (PosOrNeg)
                 tmp[index] = tmp[index] * (1 + this.LearningSpeed);
             else
                 tmp[index] = tmp[index] * (1 - this.LearningSpeed);
 
+            // calculate a fractional learning speed for the 20 values surrounding the index
             double fractionalLearningSpeed = this.LearningSpeed / 10;
             double bellCurveUpdateVal = fractionalLearningSpeed;
+
+            // implement the fractional updates to each value
             for (int i = (index - 10); i < index; i++)
             {
                 try
@@ -312,8 +362,16 @@ namespace UltimatumGame
 
             return tmp;
         }
+
+        /// <summary>
+        /// Method used to change a probability distribution for future rewards tracking
+        /// </summary>
+        /// <param name="ResponderOrProposer">boolean representing whether it is the responder or proposer distribution of the agent</param>
+        /// <param name="index">The index to change - and centre point of bell curve change</param>
+        /// <param name="PosOrNeg">Whether the change is positive or negative</param>
         public void AdjustProbabilityDistribution(bool ResponderOrProposer, int index, bool PosOrNeg)
         {
+            // Edit value at index by a factor adjusted for the learning speeed
             if (ResponderOrProposer)
             {
                 if (PosOrNeg)
@@ -329,8 +387,11 @@ namespace UltimatumGame
                     this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 - this.LearningSpeed);
             }
 
+            // calculate a fractional learning speed for the 20 values surrounding the index
             double fractionalLearningSpeed = this.LearningSpeed / 10;
             double bellCurveUpdateVal = fractionalLearningSpeed;
+
+            // implement the fractional updates to each value
             for (int i = index-10; i < index; i++)
             {       
                 try
@@ -384,7 +445,6 @@ namespace UltimatumGame
             return "My ToM level is: "+ToMLevel;
         }
         
-        // Represents the value that will be offered to the responder
         public int GetOffer()
         {
             return Offer;
@@ -410,12 +470,12 @@ namespace UltimatumGame
             return Score;
         }
 
-        public double[] GetResponderPorbabilityDistribution()
+        public double[] GetResponderProbabilityDistribution()
         {
             return ResponderProbabilityDistribution;
         }
 
-        public double[] GetProposerPorbabilityDistribution()
+        public double[] GetProposerProbabilityDistribution()
         {
             return ProposerProbabilityDistribution;
         }
