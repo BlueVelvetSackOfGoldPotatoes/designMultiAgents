@@ -500,12 +500,20 @@ namespace UltimatumGame
             if (ToMLevel == 0){
                 if (MyAttitude) return 1;
                 else return -1;
-            }else if (ToMLevel == 1){
-                if (ResponderAttitude) return -1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
-                else return 1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
-            }else{
-                if (ToMLevel % 2 == 0) return DetermineChangeRecursive(ToMLevel - 1, Proposer, Responder);
-                else return DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+            }
+            //else if (ToMLevel == 1){
+            //    if (ResponderAttitude) return -1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+            //    else return 1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+            //}
+            else{
+                if (ToMLevel % 2 == 0) {
+                    if (MyAttitude) return 1 + DetermineChangeRecursive(ToMLevel - 1, Proposer, Responder);
+                    else return -1 + DetermineChangeRecursive(ToMLevel - 1, Proposer, Responder);
+                } 
+                else {
+                    if (ResponderAttitude) return -1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+                    else return 1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+                }
             }
         }
         #endregion
