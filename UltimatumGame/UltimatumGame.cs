@@ -90,10 +90,12 @@ namespace UltimatumGame
             int offer = agent1.DecideBestOffer(agent2);
             bool result = agent2.DecideRejectAccept(agent1, offer);
 
+            agent1.AddDealProposed(offer);
             if (result)
             {
-                agent1.AddDealProposed(offer);
-                agent2.AddDealAccepted(offer);
+                
+                agent1.SetAttitude(true);
+                agent1.AddDealProposedAccepted(offer);
 
                 agent1.AdjustScore(100 - offer);
                 agent2.AdjustScore(offer);
@@ -105,7 +107,9 @@ namespace UltimatumGame
             }
             else
             {
+                agent1.AddDealPropsedRejected(offer);
                 agent1.AdjustProbabilityDistribution(false, offer, false);
+                agent1.SetAttitude(false);
                 agent2.AdjustProbabilityDistribution(true, offer, false);
             }
         }
@@ -232,17 +236,10 @@ namespace UltimatumGame
         /// </summary>
         public void TickSingle()
         {
-            //UltimatumGameBasic(Agent1, Agent2);
-            //UltimatumGameBasic(Agent2, Agent1);
             UltimatumGameToM0(Agent1, Agent2);
             UltimatumGameToM0(Agent2, Agent1);
 
-            //Agent1.CompareScores(new List<Agent>{Agent2});
-            //Agent2.CompareScores(new List<Agent> {Agent1 });
-
             Console.WriteLine("\t\t| Agent 1 \t| Agent 2");
-            //Console.WriteLine("Offer\t\t| "+Agent1.GetOffer()+ " \t\t| " + Agent2.GetOffer());
-            // Console.WriteLine("Threshold\t| " + Agent1.GetAcceptanceThreshold() + " \t\t| " + Agent2.GetAcceptanceThreshold());
             Console.WriteLine("Score\t\t| " + Agent1.GetScore() + " \t\t| " + Agent2.GetScore());
 
         }
@@ -257,6 +254,25 @@ namespace UltimatumGame
                 Console.WriteLine("--------------------Iteration " + (i + 1) + "--------------------");
                 TickSingle();
             }
+            Console.Write("----------------------------End of Game -----------------------------\n");
+            Console.WriteLine("\t\t| Agent 1 \t| Agent 2");
+            Console.WriteLine("Average Score\t\t| " + Agent1.GetScore()/Iterations + " \t\t| " + Agent2.GetScore()/Iterations);
+
+            Console.WriteLine("Offers Proposed -----------------------------------------------------------------");
+            Console.WriteLine("Max. Offer Proposed\t\t\t " + Agent1.GetDealsProposed().Max() + " \t\t| " + Agent2.GetDealsProposed().Max());
+            Console.WriteLine("Av. Offer Proposed\t\t\t " + Agent1.GetDealsProposed().Sum()/Iterations + " \t\t| " + Agent2.GetDealsProposed().Sum()/Iterations);
+            Console.WriteLine("Min. Offer Proposed\t\t\t " + Agent1.GetDealsProposed().Min() + " \t\t| " + Agent2.GetDealsProposed().Min());
+
+            Console.WriteLine("Offers Proposed Accepted-----------------------------------------------------------------");
+            Console.WriteLine("Max. Offer Proposed Acc.\t\t " + Agent1.GetDealsProposedAccepted().Max() + " \t\t| " + Agent2.GetDealsProposedAccepted().Max());
+            Console.WriteLine("Av. Offer Proposed Acc.\t\t\t " + Agent1.GetDealsProposedAccepted().Sum() / Iterations + " \t\t| " + Agent2.GetDealsProposedAccepted().Sum() / Iterations);
+            Console.WriteLine("Min. Offer Proposed Acc.\t\t " + Agent1.GetDealsProposedAccepted().Min() + " \t\t| " + Agent2.GetDealsProposedAccepted().Min());
+
+            Console.WriteLine("Offers Proposed Rejected-----------------------------------------------------------------");
+            Console.WriteLine("Max. Offer Proposed Rej.\t\t " + Agent1.GetDealsProposedRejected().Max() + " \t\t| " + Agent2.GetDealsProposedRejected().Max());
+            Console.WriteLine("Av. Offer Proposed Rej.\t\t\t " + Agent1.GetDealsProposedRejected().Sum() / Iterations + " \t\t| " + Agent2.GetDealsProposedRejected().Sum() / Iterations);
+            Console.WriteLine("Min. Offer Proposed Rej.\t\t " + Agent1.GetDealsProposedRejected().Min() + " \t\t| " + Agent2.GetDealsProposedRejected().Min());
+
         }
         #endregion
     }
