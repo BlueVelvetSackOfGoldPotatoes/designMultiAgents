@@ -19,12 +19,14 @@ namespace UltimatumGame
         ToM1,
         ToM2,
         ToM3,
-        ToMn
+        ToM4,
+        ToM5,
+        ToM6
     };
 
     class Agent
     {
-
+        private int NumToMLevels = 7;
         #region Agent Variables
         private Random random;
         private double LearningSpeed { get; set; }
@@ -39,15 +41,15 @@ namespace UltimatumGame
         private double[] ResponderProbabilityDistribution { get; set; }
         private double[] ProposerProbabilityDistribution { get; set; }
         private double AttitudeValue = 0.05;
-
+        private ToMLevel[] levels = (ToMLevel[]) Enum.GetValues(typeof(ToMLevel));
         // Shift distribution
         // Attitude affects updates to probability dsitribution
 
         // ----------------------------------------------------------------------
         // Baseline - ToM 0
-        //  If agent 1 is Trustful - Adjust higher offers to have higher likelihoods - willing to do worse for self
+        //  If agent 1 is Trustful - Adjust lower offers to have higher likelihoods - willing to do worse for self
 
-        // If agent 1 is Disgusted - Adjust lower offers to have higher likelihoods - not willing to do worse for self
+        // If agent 1 is Disgusted - Adjust higher offers to have higher likelihoods - not willing to do worse for self
 
         // -----------------------------------------------------------------------
         // ToM1 - update based on their feelings
@@ -58,14 +60,13 @@ namespace UltimatumGame
         // Agent 1 see agent 2 attitude: would normally decrease deal but does nothing
 
         // Agent 2 happy ~~> Increas likelyhood of worst cut because I know he is happy and is more likely to accept worse deal 
-        
+
         // ---------------------------------------------------------------------
         // ToM 2 - update based on both feelings - effectively ToM0
         // Im agent 1 (proposer) and I am (+) - I know agent 2 knows I am (+) therefore knows I am willing to do worse for myself => lower offer
         // 
 
         // Get the Enum Values
-        private ToMLevel[] levels = (ToMLevel[])Enum.GetValues(typeof(ToMLevel));
         #endregion
 
         #region Constructor Method(s).
@@ -105,7 +106,7 @@ namespace UltimatumGame
             catch
             {
                 // Set ToM level randomly
-                ToMLevel = (ToMLevel)random.Next(0, 5);
+                ToMLevel = (ToMLevel)random.Next(0, NumToMLevels);
             }
         }
         #endregion
@@ -480,6 +481,32 @@ namespace UltimatumGame
                 distribution.Select(x => (double) (x - AttitudeValue));
 
             NormalizeDistribution(distribution);
+        }
+
+        private int DetermineChange(int ToMLevel, Agent Responder)
+        {
+            int ans = DetermineChangeRecursive(ToMLevel, this, Responder);
+
+            if (ans < 0) return -1;
+            else if (ans > 0) return 1;
+            else return 0;
+        }
+
+        private int DetermineChangeRecursive(int ToMLevel, Agent Proposer ,Agent Responder)
+        {
+            bool MyAttitude = Proposer.Attitude;
+            bool ResponderAttitude = Responder.GetAttitude();
+
+            if (ToMLevel == 0){
+                if (MyAttitude) return 1;
+                else return -1;
+            }else if (ToMLevel == 1){
+                if (ResponderAttitude) return -1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+                else return 1 + DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+            }else{
+                if (ToMLevel % 2 == 0) return DetermineChangeRecursive(ToMLevel - 1, Proposer, Responder);
+                else return DetermineChangeRecursive(ToMLevel - 1, Responder, Proposer);
+            }
         }
         #endregion
 
