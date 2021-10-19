@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 
+// Add some kind of variable that signals the annoyance/goodwill of the other agent. Based on this value worse offers will be rejected/accepted
+
+
 // 50 probability for everyone
 // Just current reward for ToM0
 
