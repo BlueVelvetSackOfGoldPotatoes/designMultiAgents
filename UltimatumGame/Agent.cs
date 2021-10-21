@@ -195,6 +195,8 @@ namespace UltimatumGame
             // ------------------------------------------------------ToM Stuff
             int ChangeDirection = DetermineChange((int)this.ToMLevel, responder);
 
+            AttitudeValue += (ChangeDirection / 100);
+
             if (ChangeDirection > 0)
                 AdjustDistribution(probabilityDistribution, true, responder);
             else if (ChangeDirection < 0)
@@ -517,31 +519,52 @@ namespace UltimatumGame
 
         private int DetermineChange(int ToMLevelProposer, Agent Responder)
         {
-            int ans = DetermineChangeRecursive(ToMLevelProposer, this, Responder);
+            // int ans = DetermineChangeRecursive(ToMLevelProposer, this, Responder);
+            int ans = DetermineChangeRecursive(ToMLevelProposer, (this, Responder));
 
-            if (ans < 0) return -1; // increase pr of lower offers
-            else if (ans > 0) return 1;
-            else return 0;
+            return ans;
+
+            //if (ans < 0) return -1; // increase pr of lower offers
+            //else if (ans > 0) return 1;
+            //else return 0;
         }
 
-        private int DetermineChangeRecursive(int ToMLevelProposer, Agent Proposer, Agent Responder)
+        private int DetermineChangeRecursive(int ToMLevelProposer, (Agent, Agent) AgentTuple)
         {
-            bool MyAttitude = Proposer.Attitude;
-            bool ResponderAttitude = Responder.GetAttitude();
+            // bool MyAttitude = Proposer.Attitude;
+            // bool ResponderAttitude = Responder.GetAttitude();
+            bool Agent1Attitude = AgentTuple.Item1.GetAttitude();
+            bool Agent2Attitude = AgentTuple.Item2.GetAttitude();
+
+            // Switch values
+            AgentTuple = (AgentTuple.Item2, AgentTuple.Item1);
 
             if (ToMLevelProposer == 0){
-                if (MyAttitude) return 1;
+                if (Agent1Attitude) return 1;
                 else return -1;
             }else{
                 if (ToMLevelProposer % 2 == 0) {
-                    if (MyAttitude) return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, Proposer, Responder);
-                    else return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, Proposer, Responder);
+                    if (Agent1Attitude) return ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+                    else return -ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                 } 
                 else {
-                    if (ResponderAttitude) return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, Responder, Proposer);
-                    else return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, Responder, Proposer);
+                    if (Agent2Attitude) return -ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+                    else return ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                 }
             }
+            //if (ToMLevelProposer == 0){
+            //    if (Agent1Attitude) return 1;
+            //    else return -1;
+            //}else{
+            //    if (ToMLevelProposer % 2 == 0) {
+            //        if (Agent1Attitude) return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+            //        else return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+            //    } 
+            //    else {
+            //        if (Agent2Attitude) return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+            //        else return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
+            //    }
+            //}
         }
         #endregion
 

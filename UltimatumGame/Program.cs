@@ -7,7 +7,7 @@ namespace UltimatumGame
         static void Main(string[] args)
         {
             // Make the game run
-            UltimatumGame UG = new UltimatumGame(0, 0, 0.6, 0.6, 10);
+            UltimatumGame UG = new UltimatumGame(0,2 , 0.6, 0.6, 1000);
             UG.PlaySingle();
         }
     }
