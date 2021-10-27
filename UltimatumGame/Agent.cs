@@ -46,6 +46,7 @@ namespace UltimatumGame
         private double[] ResponderProbabilityDistribution { get; set; }
         private double[] ProposerProbabilityDistribution { get; set; }
         private double AttitudeValue = 0.05;
+        private double ChangeValue = 0.0;
         private ToMLevel[] levels = (ToMLevel[]) Enum.GetValues(typeof(ToMLevel));
         // Get the Enum Values
         #endregion
@@ -193,14 +194,26 @@ namespace UltimatumGame
             double[] probabilityDistribution = responder.GetResponderProbabilityDistribution();
 
             // ------------------------------------------------------ToM Stuff
-            int ChangeDirection = DetermineChange((int)this.ToMLevel, responder);
+            double ChangeDirection = DetermineChange((int)this.ToMLevel, responder);
+            Console.WriteLine(AttitudeValue);
+            Console.WriteLine(ChangeDirection);
 
-            AttitudeValue += (ChangeDirection / 100);
+            this.AttitudeValue += ChangeDirection;
+            //this.AttitudeValue *= Math.Abs(ChangeDirection);
 
-            if (ChangeDirection > 0)
+            //if (ChangeDirection > 0.0)
+            //    this.AttitudeValue += ChangeDirection;
+            //else if (ChangeDirection < 0.0)
+            //    this.AttitudeValue -= Math.Abs(ChangeDirection);
+
+            //AttitudeValue *= (ChangeDirection / 20); 
+
+            if (this.AttitudeValue > 0)
                 AdjustDistribution(probabilityDistribution, true, responder);
-            else if (ChangeDirection < 0)
+            else if (this.AttitudeValue < 0)
                 AdjustDistribution(probabilityDistribution, false, responder);
+
+            
             // ---------------------------------------------------------------
 
             
@@ -400,31 +413,33 @@ namespace UltimatumGame
         }
 
         /// <summary>
-        /// Method used to change a probability distribution for future rewards tracking
+        /// Method used to change a probability distribution after deals have been made
         /// </summary>
         /// <param name="ResponderOrProposer">boolean representing whether it is the responder or proposer distribution of the agent</param>
         /// <param name="index">The index to change - and centre point of bell curve change</param>
         /// <param name="PosOrNeg">Whether the change is positive or negative</param>
-        public void AdjustProbabilityDistribution(bool ResponderOrProposer, int index, bool PosOrNeg)
+        public void AdjustProbabilityDistribution(bool ResponderOrProposer, int index,bool PosOrNeg, double ToMScore=1.0)
         {
             // Edit value at index by a factor adjusted for the learning speeed
             if (ResponderOrProposer)
             {
+                // this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 - this.LearningSpeed);
                 if (PosOrNeg)
-                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 + this.LearningSpeed);
+                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 + (this.LearningSpeed * Math.Abs(ToMScore)));
                 else
-                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 - this.LearningSpeed);
+                    this.ResponderProbabilityDistribution[index] = (double) this.ResponderProbabilityDistribution[index] * (1 - (this.LearningSpeed * Math.Abs(ToMScore)));
             }
             else
             {
                 if (PosOrNeg)
-                   this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 + this.LearningSpeed);
+                   this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 + (this.LearningSpeed * Math.Abs(ToMScore)));
                 else
-                    this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 - this.LearningSpeed);
+                    this.ProposerProbabilityDistribution[index] = (double) this.ProposerProbabilityDistribution[index] * (1 - (this.LearningSpeed * Math.Abs(ToMScore)));
             }
 
             // calculate a fractional learning speed for the 20 values surrounding the index
-            double fractionalLearningSpeed = this.LearningSpeed / 10;
+            //double fractionalLearningSpeed = this.LearningSpeed / 10;
+            double fractionalLearningSpeed = (this.LearningSpeed * Math.Abs(ToMScore)) / 10;
             double bellCurveUpdateVal = fractionalLearningSpeed;
 
             // implement the fractional updates to each value
@@ -471,7 +486,7 @@ namespace UltimatumGame
                 bellCurveUpdateVal += fractionalLearningSpeed;
             }
 
-            if (PosOrNeg)
+            if (ResponderOrProposer)
             {
                 if (this.ProposerProbabilityDistribution.Max() > 1.0 || this.ProposerProbabilityDistribution.Min() < 0.0)
                 {
@@ -489,25 +504,46 @@ namespace UltimatumGame
                 
         }
 
+        /// <summary>
+        /// Method used to normalize distributions for when values get above 1 or below 0
+        /// </summary>
+        /// <param name="distribution">The distribution ot change</param>
         private void NormalizeDistribution(double[] distribution)
         {
             distribution.Select(x => (double)((x - distribution.Min()) / (distribution.Max() - distribution.Min())));
         }
 
+        /// <summary>
+        /// Method used to change a probability distribution for future rewards tracking
+        /// </summary>
+        /// <param name="distribution">the distribution to change</param>
+        /// <param name="PosOrNeg">Whether the change is positive or negative</param>
+        /// <param name="Responder">The responding agent</param>
         private void AdjustDistribution(double[] distribution, bool PosOrNeg, Agent Responder)
         {
             // Adjust above and down from last accepted offer
             int val = Responder.GetLastAccepted();
 
+            //if (PosOrNeg)
+            //{
+            //    for (int i = val; i < 101; i++)
+            //        distribution[i] += AttitudeValue;
+            //}
+            //else
+            //{
+            //    for (int i = 0; i < val; i++)
+            //        distribution[i] += AttitudeValue;
+            //}
+
             if (PosOrNeg)
             {
                 for (int i = val; i < 101; i++)
-                    distribution[i] += AttitudeValue;
+                    distribution[i] += (AttitudeValue * this.LearningSpeed);
             }
             else
             {
                 for (int i = 0; i < val; i++)
-                    distribution[i] -= AttitudeValue;
+                    distribution[i] -= (Math.Abs(AttitudeValue) * this.LearningSpeed);
             }
 
             if (distribution.Max() > 1.0 || distribution.Min() < 0.0)
@@ -517,12 +553,22 @@ namespace UltimatumGame
             }    
         }
 
-        private int DetermineChange(int ToMLevelProposer, Agent Responder)
+        private double DetermineChange(int ToMLevelProposer, Agent Responder)
         {
             // int ans = DetermineChangeRecursive(ToMLevelProposer, this, Responder);
             int ans = DetermineChangeRecursive(ToMLevelProposer, (this, Responder));
 
-            return ans;
+            int SumToZero = 0;
+            for (int i = ToMLevelProposer; i > 0; i--)
+                SumToZero += i;
+
+            double scaledAns = ans;
+            if (SumToZero != 0)
+                scaledAns = (double) ans / (double) SumToZero;
+            
+            this.ChangeValue = scaledAns;
+
+            return scaledAns;
 
             //if (ans < 0) return -1; // increase pr of lower offers
             //else if (ans > 0) return 1;
@@ -539,28 +585,39 @@ namespace UltimatumGame
             // Switch values
             AgentTuple = (AgentTuple.Item2, AgentTuple.Item1);
 
-            if (ToMLevelProposer == 0){
+            if (ToMLevelProposer == 0)
+            {
                 if (Agent1Attitude) return 1;
                 else return -1;
-            }else{
-                if (ToMLevelProposer % 2 == 0) {
+            }
+            else
+            {
+                if (ToMLevelProposer % 2 == 0)
+                {
                     if (Agent1Attitude) return ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                     else return -ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-                } 
-                else {
+                }
+                else
+                {
                     if (Agent2Attitude) return -ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                     else return ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                 }
             }
-            //if (ToMLevelProposer == 0){
+
+            //if (ToMLevelProposer == 0)
+            //{
             //    if (Agent1Attitude) return 1;
             //    else return -1;
-            //}else{
-            //    if (ToMLevelProposer % 2 == 0) {
+            //}
+            //else
+            //{
+            //    if (ToMLevelProposer % 2 == 0)
+            //    {
             //        if (Agent1Attitude) return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
             //        else return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-            //    } 
-            //    else {
+            //    }
+            //    else
+            //    {
             //        if (Agent2Attitude) return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
             //        else return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
             //    }
@@ -629,6 +686,16 @@ namespace UltimatumGame
         public bool GetAttitude()
         {
             return Attitude;
+        }
+
+        public double GetChangeVal()
+        {
+            return ChangeValue;
+        }
+
+        public double GetAttitudeValue()
+        {
+            return AttitudeValue;
         }
         #endregion
 

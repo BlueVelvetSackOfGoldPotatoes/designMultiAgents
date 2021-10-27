@@ -88,8 +88,10 @@ namespace UltimatumGame
         private void UltimatumGameToM0(Agent agent1, Agent agent2)
         {
             int offer = agent1.DecideBestOffer(agent2);
+            Console.WriteLine("Agent 1 Attitude:" + agent1.GetAttitudeValue());
             bool result = agent2.DecideRejectAccept(agent1, offer);
-
+            Console.WriteLine("Agent 2 Attitude:" + agent2.GetAttitudeValue());
+            double ToMScore;
             agent1.AddDealProposed(offer);
             if (result)
             {
@@ -100,15 +102,25 @@ namespace UltimatumGame
                 agent1.AdjustScore(100 - offer);
                 agent2.AdjustScore(offer);
 
+                ToMScore = agent1.GetChangeVal();
+
+                if (ToMScore == 0.0)
+                        ToMScore = 1.0;
+
+
 
                 // Update Prob Dist for accepting or rejecting agent
-                agent1.AdjustProbabilityDistribution(false, offer, true);
+                agent1.AdjustProbabilityDistribution(false, offer, true, ToMScore);
                 agent2.AdjustProbabilityDistribution(true, offer, true);
             }
             else
             {
+                ToMScore = agent1.GetChangeVal();
+                if (ToMScore == 0.0)
+                    ToMScore = 1.0;
+
                 agent1.AddDealPropsedRejected(offer);
-                agent1.AdjustProbabilityDistribution(false, offer, false);
+                agent1.AdjustProbabilityDistribution(false, offer, false, ToMScore);
                 agent1.SetAttitude(false);
                 agent2.AdjustProbabilityDistribution(true, offer, false);
             }
