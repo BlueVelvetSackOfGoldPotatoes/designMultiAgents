@@ -4,13 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
-// Add some kind of variable that signals the annoyance/goodwill of the other agent. Based on this value worse offers will be rejected/accepted
-
-
-// 50 probability for everyone
-// Just current reward for ToM0
-
 namespace UltimatumGame
 {
     /// <summary>
@@ -27,11 +20,14 @@ namespace UltimatumGame
         ToM6
     };
 
+    /// <summary>
+    /// Class for the Agent that will be playing the UG - all UG methods and ToM Implementation details in this class
+    /// </summary>
     class Agent
     {
         private int NumToMLevels = 7;
-        #region Agent Variables
         private Random random;
+        #region Agent Variables
         private double LearningSpeed { get; set; }
         private double Score { get; set; }
         private int Offer { get; set; }
@@ -96,11 +92,6 @@ namespace UltimatumGame
         #endregion
 
         #region Functional Methods
-        public void AdjustScore(double val)
-        {
-            Score += val;
-        }
-
         /// <summary>
         /// Compare scores to the list of agents around you
         /// </summary>
@@ -123,7 +114,7 @@ namespace UltimatumGame
             }
         }
 
-        // ---------------------- Functions needed for deciding action of proposer ---------------------- 
+        #region Proposer Methods
         /// <summary>
         /// A method that is used to calculate the future reward of offering any offer to the responder
         /// </summary>
@@ -135,16 +126,8 @@ namespace UltimatumGame
             double[] acceptanceRewards = new double[101];
             double[] rejectionRewards = new double[101];
 
-            //List<int> agent2RejectProspects = Responder.GetDealsAccepted();
-            //List<int> agent2AcceptProspects = new List<int>();
-            //foreach (int i in agent2RejectProspects)
-            //    agent2AcceptProspects.Add(i);
-            //agent2AcceptProspects.Add(DealOffered);
             double[] ResponderRejectPropsects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, false);
             double[] ResponderAcceptProspects = FutureAdjustProbabilityDistribution(Responder.GetResponderProbabilityDistribution(), DealOffered, true);
-
-            //double[] probabilityDistributionAcceptance = ProbabilityDistributionResponder(agent2AcceptProspects);
-            //double[] probabilityDistributionRejection = ProbabilityDistributionResponder(agent2RejectProspects);
 
             for (int deal = 0; deal < 101; deal++)
             {
@@ -158,30 +141,6 @@ namespace UltimatumGame
                 return rejectionRewards.Max();
         }
 
-        // --------------------------
-        private double[] ProbabilityDistributionResponder(List<int> DealsAccepted)
-        {
-            double[] probabilityDistribution = new double[101];
-
-            if (DealsAccepted.Count == 0)
-            {
-                for (int i = 0; i < 51; i++)
-                    probabilityDistribution[i] = i * 2;
-                for (int i = 51; i < 101; i++)
-                    probabilityDistribution[i] = 100;
-            }
-            else
-            {
-                int lowest = DealsAccepted.Min();
-                for (int i = lowest; i < 101; i++)
-                    probabilityDistribution[i] = 100;
-                for (int i = 0; i < lowest; i++)
-                    probabilityDistribution[i] = (i / lowest) * 100;
-            }
-
-            return probabilityDistribution.Select(x => x / 100).ToArray();
-        }
-
         /// <summary>
         /// A function that decides the best offer for the proposer to make based on the responder
         /// </summary>
@@ -193,31 +152,14 @@ namespace UltimatumGame
             double futureRewards;
             double[] probabilityDistribution = responder.GetResponderProbabilityDistribution();
 
-            // ------------------------------------------------------ToM Stuff
             double ChangeDirection = DetermineChange((int)this.ToMLevel, responder);
-            Console.WriteLine(AttitudeValue);
-            Console.WriteLine(ChangeDirection);
 
             this.AttitudeValue += ChangeDirection;
-            //this.AttitudeValue *= Math.Abs(ChangeDirection);
-
-            //if (ChangeDirection > 0.0)
-            //    this.AttitudeValue += ChangeDirection;
-            //else if (ChangeDirection < 0.0)
-            //    this.AttitudeValue -= Math.Abs(ChangeDirection);
-
-            //AttitudeValue *= (ChangeDirection / 20); 
 
             if (this.AttitudeValue > 0)
                 AdjustDistribution(probabilityDistribution, true, responder);
             else if (this.AttitudeValue < 0)
-                AdjustDistribution(probabilityDistribution, false, responder);
-
-            
-            // ---------------------------------------------------------------
-
-            
-            // ProbabilityDistributionResponder(responder.GetDealsAccepted());
+                AdjustDistribution(probabilityDistribution, false, responder); 
 
             for (int dealVal = 0; dealVal < 101; dealVal++)
             {
@@ -227,8 +169,9 @@ namespace UltimatumGame
 
             return Array.IndexOf(rewards, rewards.Max());
         }
+        #endregion
 
-        // ---------------------- Functions needed for deciding action of responder ---------------------- 
+        #region Responder Methods
         /// <summary>
         /// Calculate the value to be gained by Responder for accepting
         /// </summary>
@@ -239,17 +182,13 @@ namespace UltimatumGame
         {
             double[] Rewards = new double[101];
 
-            //List<int> agent1Prospects = Proposer.GetDealsProposed();
             double[] Agent1Prospects = Proposer.GetProposerProbabilityDistribution();
 
-            //agent1Prospects.Add(DealOffered);
             Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, true);
             
-            //double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                //Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
                 Rewards[deal] = Agent1Prospects[deal] * deal;
             }
 
@@ -266,44 +205,16 @@ namespace UltimatumGame
         {
             double[] Rewards = new double[101];
 
-            //List<int> agent1Prospects = Proposer.GetDealsProposed();
             double[] Agent1Prospects = Proposer.GetProposerProbabilityDistribution();
 
-            //agent1Prospects.Add(DealOffered);
             Agent1Prospects = FutureAdjustProbabilityDistribution(Agent1Prospects, DealOffered, false);
-
-            //double[] probabilityDistribution = ProbabilityDistributionProposer(agent1Prospects);
 
             for (int deal = 0; deal < 101; deal++)
             {
-                //Rewards[deal] = probabilityDistribution.ElementAt(deal) * deal;
                 Rewards[deal] = Agent1Prospects[deal] * deal;
             }
 
             return Array.IndexOf(Rewards, Rewards.Max());
-        }
-
-        // --------------------------
-        public double[] ProbabilityDistributionProposer(List<int> DealsProposed)
-        {
-            double[] probabilityDistribution = new double[101];
-            // It will be difficult to come up with a good function for this
-            if (DealsProposed.Count == 0)
-            {
-                for (int i = 0; i < 51; i++)
-                    probabilityDistribution[i] = 100 - ((double)i * 2);
-                for (int i = 51; i < 101; i++)
-                    probabilityDistribution[i] = 0;
-            }
-            else
-            {
-                int dealValue = DealsProposed.Min();
-                for (int i = 0; i < dealValue; i++)
-                    probabilityDistribution[i] = 100 - ((double)i / dealValue) * 100;
-                for (int i = dealValue + 1; i < 101; i++)
-                    probabilityDistribution[i] = 0;
-            }
-            return probabilityDistribution.Select(x => x / 100).ToArray();
         }
 
         /// <summary>
@@ -337,22 +248,8 @@ namespace UltimatumGame
 
                 return false;
             }
-        }
-
-        public void AddDealProposed(int deal)
-        {
-            DealsProposed.Add(deal);
-        }
-
-        public void AddDealProposedAccepted(int deal)
-        {
-            DealsProposedAccepted.Add(deal);
-        }
-
-        public void AddDealPropsedRejected(int deal)
-        {
-            DealsProposedRejected.Add(deal);
-        }
+        } 
+        #endregion
         #endregion
 
         #region Auxilliary Methods
@@ -524,38 +421,33 @@ namespace UltimatumGame
             // Adjust above and down from last accepted offer
             int val = Responder.GetLastAccepted();
 
-            //if (PosOrNeg)
-            //{
-            //    for (int i = val; i < 101; i++)
-            //        distribution[i] += AttitudeValue;
-            //}
-            //else
-            //{
-            //    for (int i = 0; i < val; i++)
-            //        distribution[i] += AttitudeValue;
-            //}
-
             if (PosOrNeg)
             {
                 for (int i = val; i < 101; i++)
-                    distribution[i] += (AttitudeValue * this.LearningSpeed);
+                    distribution[i] += (this.AttitudeValue * this.LearningSpeed);
             }
             else
             {
                 for (int i = 0; i < val; i++)
-                    distribution[i] -= (Math.Abs(AttitudeValue) * this.LearningSpeed);
+                    distribution[i] -= (Math.Abs(this.AttitudeValue) * this.LearningSpeed);
             }
 
             if (distribution.Max() > 1.0 || distribution.Min() < 0.0)
             {
-                //Console.WriteLine("Consider me normalized");
                 NormalizeDistribution(distribution);
             }    
         }
+        #endregion
 
+        #region Theory of Mind Methods
+        /// <summary>
+        /// Method that takes in the ToM level of the proposer and the responder and returns a double representing the change to attitude of proposer
+        /// </summary>
+        /// <param name="ToMLevelProposer">ToM level of the proposer</param>
+        /// <param name="Responder">The responding agent</param>
+        /// <returns>a double that is the overall change made to attitude</returns>
         private double DetermineChange(int ToMLevelProposer, Agent Responder)
         {
-            // int ans = DetermineChangeRecursive(ToMLevelProposer, this, Responder);
             int ans = DetermineChangeRecursive(ToMLevelProposer, (this, Responder));
 
             int SumToZero = 0;
@@ -569,16 +461,16 @@ namespace UltimatumGame
             this.ChangeValue = scaledAns;
 
             return scaledAns;
-
-            //if (ans < 0) return -1; // increase pr of lower offers
-            //else if (ans > 0) return 1;
-            //else return 0;
         }
 
+        /// <summary>
+        /// The recursive method that actually generates the change value based on ToM level and moods of both agents
+        /// </summary>
+        /// <param name="ToMLevelProposer">The ToM level of the proposer</param>
+        /// <param name="AgentTuple">A tuple with proposer and responder</param>
+        /// <returns>an int that represents the overall attitude value change</returns>
         private int DetermineChangeRecursive(int ToMLevelProposer, (Agent, Agent) AgentTuple)
         {
-            // bool MyAttitude = Proposer.Attitude;
-            // bool ResponderAttitude = Responder.GetAttitude();
             bool Agent1Attitude = AgentTuple.Item1.GetAttitude();
             bool Agent2Attitude = AgentTuple.Item2.GetAttitude();
 
@@ -603,25 +495,6 @@ namespace UltimatumGame
                     else return ToMLevelProposer + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
                 }
             }
-
-            //if (ToMLevelProposer == 0)
-            //{
-            //    if (Agent1Attitude) return 1;
-            //    else return -1;
-            //}
-            //else
-            //{
-            //    if (ToMLevelProposer % 2 == 0)
-            //    {
-            //        if (Agent1Attitude) return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-            //        else return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-            //    }
-            //    else
-            //    {
-            //        if (Agent2Attitude) return -1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-            //        else return 1 + DetermineChangeRecursive(ToMLevelProposer - 1, AgentTuple);
-            //    }
-            //}
         }
         #endregion
 
@@ -629,6 +502,26 @@ namespace UltimatumGame
         public void SetAttitude(bool Attitude)
         {
             this.Attitude = Attitude;
+        }
+
+        public void AdjustScore(double val)
+        {
+            Score += val;
+        }
+
+        public void AddDealProposed(int deal)
+        {
+            DealsProposed.Add(deal);
+        }
+
+        public void AddDealProposedAccepted(int deal)
+        {
+            DealsProposedAccepted.Add(deal);
+        }
+
+        public void AddDealPropsedRejected(int deal)
+        {
+            DealsProposedRejected.Add(deal);
         }
         #endregion
 

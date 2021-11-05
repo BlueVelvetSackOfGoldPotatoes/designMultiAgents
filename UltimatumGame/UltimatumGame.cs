@@ -18,7 +18,12 @@ namespace UltimatumGame
         #endregion
 
         #region Constructor Methods
-        public UltimatumGame(int WorldLength, int iterations) // Other variables to determine how much ToM levels occur should go here
+        /// <summary>
+        /// UG Setup for a map based UG
+        /// </summary>
+        /// <param name="WorldLength"></param>
+        /// <param name="iterations"></param>
+        public UltimatumGame(int WorldLength, int iterations)
         {
             WorldX = WorldLength;
             WorldY = WorldLength;
@@ -85,12 +90,12 @@ namespace UltimatumGame
         /// </summary>
         /// <param name="agent1"></param>
         /// <param name="agent2"></param>
-        private void UltimatumGameToM0(Agent agent1, Agent agent2)
+        private void UltimatumGameToM(Agent agent1, Agent agent2)
         {
             int offer = agent1.DecideBestOffer(agent2);
-            Console.WriteLine("Agent 1 Attitude:" + agent1.GetAttitudeValue());
+            //Console.WriteLine("Agent 1 Attitude:" + agent1.GetAttitudeValue());
             bool result = agent2.DecideRejectAccept(agent1, offer);
-            Console.WriteLine("Agent 2 Attitude:" + agent2.GetAttitudeValue());
+            //Console.WriteLine("Agent 2 Attitude:" + agent2.GetAttitudeValue());
             double ToMScore;
             agent1.AddDealProposed(offer);
             if (result)
@@ -248,8 +253,8 @@ namespace UltimatumGame
         /// </summary>
         public void TickSingle()
         {
-            UltimatumGameToM0(Agent1, Agent2);
-            UltimatumGameToM0(Agent2, Agent1);
+            UltimatumGameToM(Agent1, Agent2);
+            UltimatumGameToM(Agent2, Agent1);
 
             Console.WriteLine("\t\t| Agent 1 \t| Agent 2");
             Console.WriteLine("Score\t\t| " + Agent1.GetScore() + " \t\t| " + Agent2.GetScore());
